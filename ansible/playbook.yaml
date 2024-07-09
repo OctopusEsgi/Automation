@@ -1,0 +1,48 @@
+---
+- name: Install applications
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+    
+    - name: Mise à jour de tous les paquets
+      apt:
+        upgrade: dist
+
+    - name: Installation de GlusterFS
+      apt:
+        name: glusterfs-server
+        state: present
+
+    - name: Installation de curl
+      apt:
+        name: curl
+        state: present
+
+    - name: Installation de Docker
+      shell: cd ~ && curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
+
+    - name: Installation de Docker Compose
+      apt:
+        name: docker-compose
+        state: present
+
+    # - name: Initialisation de Docker Swarm
+    #   command: docker swarm init
+    #   ignore_errors: yes
+
+    - name: Installation du service node_exporter
+      shell: |
+        wget https://github.com/prometheus/node_exporter/releases/download/v1.8.0/node_exporter-1.8.0.linux-amd64.tar.gz
+        tar -xvf node_exporter-1.8.0.linux-amd64.tar.gz
+        cd node_exporter-1.8.0.linux-amd64
+        cp node_exporter /usr/local/bin/node_exporter
+        echo -e "[Unit]\nDescription=Prometheus Node Exporter\nService\nAfter=network.target\n\n[Service]\nType=simple\nExecStart=/usr/local/bin/node_exporter\n\n[Install]\nWantedBy=multi-user.target" > /etc/systemd/system/node-exporter.service
+        systemctl daemon-reload
+        service node-exporter start
+        service node-exporter status
+      ignore_errors: yes
+
+      

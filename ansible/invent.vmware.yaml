@@ -1,0 +1,8 @@
+plugin: vmware_vm_inventory
+strict: False
+hostname: 10.255.0.204
+username: Administrator@vsphere.local
+password: XXXXXXXX
+validate_certs: False
+with_tags: True
+host_filters: "tags in ('Noeud','Non configuré')"
