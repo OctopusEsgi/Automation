@@ -109,20 +109,26 @@ resource "local_file" "ansible-inventory" {
 	"mkdir -p ~/.ssh"
 ]
   }
-
-# Remove existing SSH known hosts as remote identification (host key) changes between deployments.
-  #provisioner "local-exec" {
-   # command = "ssh-keygen -R vsphere_virtual_machine.mindustry.default_ip_address"
-  #}
-
-  #provisioner "local-exec" {
-   # command = "sshpass -p ${var.ssh_passwd_user} ssh-copy-id -i ${var.ssh_key_public} -o StrictHostKeyChecking=no octopus@${vsphere_virtual_machine.mindustry.default_ip_address}"
-  #}
-
   provisioner "local-exec" {
     command = "ansible-playbook -i ansible/inventory.ini -u octopus ansible/playbook.yaml"
     }
 
+}
+
+resource "null_resource" "prometheus" {
+connection {
+      type     = "ssh"
+      user     = "root"
+      password = var.vsphere_password
+      host     = "10.255.0.32"
+    }
+
+  provisioner "remote-exec" {
+    inline = [
+	"echo '        -  \"${vsphere_virtual_machine.mindustry.default_ip_address}:9100\"' >> prometheus/prometheus.yml",
+  "docker container restart prometheus"
+]
+  }
 }
 
 output "vm_ip" {
