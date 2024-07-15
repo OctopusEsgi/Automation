@@ -9,31 +9,32 @@ provider "vsphere" {
   allow_unverified_ssl = true
 }
 
-#### RETRIEVE DATA INFORMATION ON VCENTER ####
+#### RETRIEVE DATA INFORMATION FROM VCENTER ####
 
+# Retrieve datacenter information from vCenter
 data "vsphere_datacenter" "dc" {
   name = var.datacenter
 }
 
-# If you don't have any resource pools, put "Resources" after cluster name
+# Retrieve compute cluster information from vCenter
 data "vsphere_compute_cluster" "cluster" {
   name          = var.cluster
   datacenter_id = data.vsphere_datacenter.dc.id
 }
 
-# Retrieve datastore information on vsphere
+# Retrieve datastore information from vsphere
 data "vsphere_datastore" "datastore" {
   name          = var.datastore
   datacenter_id = data.vsphere_datacenter.dc.id
 }
 
-# Retrieve network information on vsphere
+# Retrieve network information from vsphere
 data "vsphere_network" "network" {
   name          = var.network_name
   datacenter_id = data.vsphere_datacenter.dc.id
 }
 
-# Retrieve template information on vsphere
+# Retrieve template information from vsphere
 data "vsphere_virtual_machine" "template" {
   name          = "OctopusTemplate"
   datacenter_id = data.vsphere_datacenter.dc.id
@@ -41,16 +42,17 @@ data "vsphere_virtual_machine" "template" {
 
 #### VM CREATION ####
 
-# Randomize the id of the Hostname
+# Generate a random id for the hostname
 resource "random_id" "id" {
 	  byte_length = 4
 }
 
+#Define local variables
 locals {
   vm_name    = "Octopus-${random_id.id.hex}"
 }
 
-# Set vm parameters
+# Define VM parameters
 resource "vsphere_virtual_machine" "mindustry" {
   name             = "${local.vm_name}"
   num_cpus         = var.num_cpus
@@ -72,20 +74,13 @@ resource "vsphere_virtual_machine" "mindustry" {
 
 guest_id = "debian11_64Guest"
 
+# Clone from a template
   clone {
     template_uuid = data.vsphere_virtual_machine.template.id
-
-    /* customize {
-      linux_options {
-        host_name = "${local.vm_name}"
-        domain    = "${local.vm_name}.octopus.esgi"
-      }
-
-      network_interface {}
-    }  */
   }
 }
 
+#Create a local file for Ansible inventory 
 resource "local_file" "ansible-inventory" {
   content = templatefile(
     "${path.module}/ansible-inventory.tftpl",
@@ -96,25 +91,27 @@ resource "local_file" "ansible-inventory" {
   filename = "${path.module}/ansible/inventory.ini"
   file_permission = "0644"
 
+    #Define SSH Connection
     connection {
       type     = "ssh"
       user     = "${var.user}"
       password = "${var.ssh_password}"
       host     = vsphere_virtual_machine.mindustry.default_ip_address
     }
-
+  # Define remote-exec provisioner for update VM packages
   provisioner "remote-exec" {
     inline = [
 	"sudo -s apt-get upgrade && sudo -s apt-get -qq install python3 -y",
 	"mkdir -p ~/.ssh"
 ]
   }
+# Run ansible fil
   provisioner "local-exec" {
     command = "ansible-playbook -i ansible/inventory.ini -u octopus ansible/playbook.yaml"
     }
 
 }
-
+# Define connection for add information on prometheus file
 resource "null_resource" "prometheus" {
 connection {
       type     = "ssh"
@@ -131,10 +128,11 @@ connection {
   }
 }
 
+# Output the IP address of the VM
 output "vm_ip" {
   value = vsphere_virtual_machine.mindustry.default_ip_address
 }
-
+# Output the name of the VM
 output "vm_name" {
   value = "${local.vm_name}"
 }
