@@ -24,14 +24,8 @@
     - name: Installation de Docker
       shell: cd ~ && curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
 
-    - name: Installation de Docker Compose
-      apt:
-        name: docker-compose
-        state: present
-
-    # - name: Initialisation de Docker Swarm
-    #   command: docker swarm init
-    #   ignore_errors: yes
+    - name: Initialisation de Docker Swarm
+      command: docker swarm join --token XXXX 192.168.XX.XX:XXXX
 
     - name: Installation du service node_exporter
       shell: |
