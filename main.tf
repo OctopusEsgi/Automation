@@ -53,7 +53,7 @@ locals {
 }
 
 # Define VM parameters
-resource "vsphere_virtual_machine" "mindustry" {
+resource "vsphere_virtual_machine" "octopus_node" {
   name             = "${local.vm_name}"
   num_cpus         = var.num_cpus
   memory           = var.memory
@@ -87,7 +87,7 @@ resource "local_file" "ansible-inventory" {
   content = templatefile(
     "${path.module}/ansible-inventory.tftpl",
     {
-      mindustry-ip = vsphere_virtual_machine.mindustry.default_ip_address
+      octopus-ip = vsphere_virtual_machine.octopus_node.default_ip_address
     }
   )
   filename = "${path.module}/ansible/inventory.ini"
@@ -98,7 +98,7 @@ resource "local_file" "ansible-inventory" {
       type     = "ssh"
       user     = "${var.user}"
       password = "${var.ssh_password}"
-      host     = vsphere_virtual_machine.mindustry.default_ip_address
+      host     = vsphere_virtual_machine.octopus_node.default_ip_address
     }
   # Define remote-exec provisioner for update VM packages
   provisioner "remote-exec" {
@@ -127,7 +127,7 @@ connection {
 
   provisioner "remote-exec" {
     inline = [
-	"echo '        -  \"${vsphere_virtual_machine.mindustry.default_ip_address}:9100\"' >> prometheus/prometheus.yml",
+	"echo '        -  \"${vsphere_virtual_machine.octopus_node.default_ip_address}:9100\"' >> prometheus/prometheus.yml",
   "docker container restart prometheus"
 ]
   }
@@ -137,7 +137,7 @@ connection {
 
 # Output the IP address of the VM
 output "vm_ip" {
-  value = vsphere_virtual_machine.mindustry.default_ip_address
+  value = vsphere_virtual_machine.octopus_node.default_ip_address
 }
 # Output the name of the VM
 output "vm_name" {
