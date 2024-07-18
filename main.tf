@@ -80,6 +80,8 @@ guest_id = "debian11_64Guest"
   }
 }
 
+#### ANSIBLE CREATION AND USAGE ####
+
 #Create a local file for Ansible inventory 
 resource "local_file" "ansible-inventory" {
   content = templatefile(
@@ -111,6 +113,9 @@ resource "local_file" "ansible-inventory" {
     }
 
 }
+
+#### ADD VM INFORMATIONS FOR PROMETHEUS ####
+
 # Define connection for add information on prometheus file
 resource "null_resource" "prometheus" {
 connection {
@@ -127,6 +132,8 @@ connection {
 ]
   }
 }
+
+#### OUTPUT ####
 
 # Output the IP address of the VM
 output "vm_ip" {
